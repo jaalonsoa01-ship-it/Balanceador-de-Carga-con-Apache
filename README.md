@@ -10,15 +10,18 @@ Establecer las direcciones IP dentro de las 4 maquinas, como voy a entrar como r
 
 nano /etc/network/interfaces 
 
-# Interfaz NAT (Internet)
+***Interfaz NAT (Internet)***
+```
 auto enp0s3
 iface enp0s3 inet dhcp
-
-# Interfaz Red Interna (IP Estática)
+```
+***Interfaz Red Interna (IP Estática)***
+```
 auto enp0s8
 iface enp0s8 inet static
     address 192.168.56.10  
     netmask 255.255.255.0
+```
 
 Modificaremos la address, usando los siguientes valores para cada uno: .10 para Balanceador, .21 para Web1, .22 para Web2, .30 para DB
 
@@ -27,13 +30,17 @@ sudo systemctl restart networking
 Configurando a la maquina WEB1:
 
 Debo instalar el servidor Apache y el cliente de MariaDB para conectarme con la base de datos
-
+```
 sudo apt update && sudo apt install apache2 mariadb-client -y
+```
+Una vez instalado procedo a crear una pagina web sencilla para así asignarla a web1
 
-Una vez instalado procedo a crear una pagina web sencilla
-
+```
 sudo nano /var/www/html/index.html
+```
 
+La pagina web en cuestion:
+```
 <!DOCTYPE html>
 <html>
 <head><title>JoaquinAlonsoAdamsWeb1</title></head>
@@ -43,17 +50,19 @@ sudo nano /var/www/html/index.html
     <p>Si lees esto, es porque funciona</p>
 </body>
 </html>
-
-Configurando a la maquina WEB2:
+```
+### Configurando a la maquina WEB2:
 
 Debo instalar el servidor Apache y el cliente de MariaDB para conectarme con la base de datos
-
+```
 apt update && apt install apache2 mariadb-client -y
-
-Una vez instalado procedo a crear una pagina web sencilla
-
+```
+Una vez instalado procedo a crear otra pagina web sencilla con el fin de asignarla a web2
+```
 sudo nano /var/www/html/index.html
-
+```
+La pagina web en cuestion
+```
 <!DOCTYPE html>
 <html>
 <head><title>JoaquinAlonsoAdamsWeb2</title></head>
@@ -63,64 +72,65 @@ sudo nano /var/www/html/index.html
     <p>Si lees esto, es porque funciona</p>
 </body>
 </html>
-
+```
 Configurando el servidor BBDD:
-
+```
 apt update && apt install mariadb-server -y
-
-Con eso instalamos el servidor de MariaDB
-
-Después de eso, configuraremos el archivo de red de MariaDB para permitir conexiones de la red privada.
-
+```
+Con eso instalamos el servidor de MariaDB, a continuación, configuraremos el archivo de red de MariaDB para permitir conexiones de la red privada.
+```
 sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
-
+```
 y cambia bind-address = 127.0.0.1 por bind-address = 0.0.0.0 
 
 Después de esto creamos una base de datos y usuario correspondiente
-
+```
 sudo mariadb -u root
+```
 
+```
 CREATE DATABASE practica;
 CREATE USER 'joaquin'@'192.168.56.%' IDENTIFIED BY 'mariadb';
 GRANT ALL PRIVILEGES ON practica.* TO 'joaquin'@'192.168.56.%';
 FLUSH PRIVILEGES;
 EXIT;
+```
 
 Reiniciamos el servicio con sudo systemctl restart mariadb, ya tenemos configurado el servidor base de datos. Sin embargo, falta una maquina virtual por modificar
-
+```
 mysql -h 192.168.56.30 -u joaquin -p con este comando comprobamos que funciona el servidor de base de datos
-
+```
 Configurando balanceador de carga:
 
 Instalar apache 
-
+```
 apt update && apt install apache2 -y
-
+```
 Habilitar modulos proxy
-
+```
 sudo a2enmod proxy proxy_http proxy_balancer lbmethod_byrequests
-
+```
 nano ~/.bashrc
-
+```
 agregar esta linea
-
+```
 export PATH=$PATH:/usr/sbin
-
+```
 Ejecutar este comando para actualizar el PATH source ~/.bashrc
 
 Se instalaron los modulos si todo va bien, para comprobar que funciono, usaremos:
-
+```
 systemctl restart apache2
-
+```
 Para el usuario final, no sabe que detrás de la pagina web dado por el balanceador, hay varios servidores y la base de datos, siendo que el mismo balanceador actúa como proxy inverso, la primera linea de defensa para evitar ataques a los servidores web 1 y web 2, mucho menos que accedan a la base de datos.
 
 Ahora toca lo más importante y tedioso, configurar el archivo de configuración de apache (000-default.conf) para que este funcione
-
-
+```
 sudo nano /etc/apache2/sites-available/000-default.conf
+```
 
 Esta será la configuración que estaré usando dentro del archivo
-
+```
 <VirtualHost *:80>
     ServerName localhost
     ProxyPreserveHost On
@@ -135,17 +145,17 @@ Esta será la configuración que estaré usando dentro del archivo
         ProxySet lbmethod=byrequests
     </Proxy>
 </VirtualHost>
-
+```
 Hay que validar que no haya errores en el archivo de configuración, el mas mínimo error lo puede dañar
 
 El comando siguiente sirve para probar las capacidades del apache2
-
+```
 sudo apache2ctl configtest
-
+```
 Como se ha realizado una configuración a apache, siempre hay que reiniciar el apache
-
+```
 sudo systemctl restart apache2
-
+```
 Probar el balanceador de carga, debo usar el navegador conectándome con localhost y usar el reenvio de puertos (8080), cuando entramos, intercambiara entre web 1 y web 2 para evitar que se sobrecarge la pagina, sin embargo, su conexión no es segura ya que se conecta mediante http://, por lo tanto necesitaremos obtener la certificación
 
 Instalar un certificado valido con certbot 
@@ -160,12 +170,10 @@ El puerto de red no coincide: El reenvío de puertos que configuraste en Virtual
 
 Limitación de Certbot: Certbot y Let's Encrypt no pueden emitir certificados SSL válidos para localhost ni para IPs privadas, ya que requieren un dominio público accesible desde Internet para validar la seguridad.
 
-
-
-Crear la lista de control de acceso:
+### Crear la lista de control de acceso:
 
 Configuración para el balancadr de cargas:
-
+```
 sudo apt install ufw -y
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
@@ -173,18 +181,20 @@ sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
 sudo ufw allow 22/tcp
 sudo ufw enable
+```
 
 Configurar JoaquinAlonsoAdamsWeb1 & JoaquinAlonsoAdamsWeb2:
-
+```
 sudo apt install ufw -y
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow from 192.168.56.10 to any port 80 proto tcp
 sudo ufw allow 22/tcp
 sudo ufw enable
+```
 
 Configurar JoaquinAlonsoAdamsBD:
-
+```
 sudo apt install ufw -y
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
@@ -192,7 +202,7 @@ sudo ufw allow from 192.168.56.21 to any port 3306 proto tcp
 sudo ufw allow from 192.168.56.22 to any port 3306 proto tcp
 sudo ufw allow 22/tcp
 sudo ufw enable
-
+```
 
 Capa 1 (Balanceador de Carga): Es la única expuesta al exterior. Debe permitir tráfico público de Internet en los puertos web (80 para HTTP y 443 para HTTPS), además del puerto de administración (22 para SSH).
 
