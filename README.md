@@ -1,13 +1,13 @@
 # Balanceador-de-Carga-con-Apache
 
 # Indice
-### Introducción
-### Creando las maquinas virtuales
-### Configurar Servidores de Backend
-### Configurar Servidores de Base de Datos
-### Configurar Balanceador
-### Instalar un certificado valido con certbot (Y probar que funciona mediante duckdns.org)
-### Crear la lista de control de acceso
+#### Introducción
+#### Creando las maquinas virtuales
+#### Configurar Servidores de Backend
+#### Configurar Servidores de Base de Datos
+#### Configurar Balanceador
+#### Instalar un certificado valido con certbot (Y probar que funciona mediante duckdns.org)
+#### Crear la lista de control de acceso
 
 ## Introducción
 Se desea montar un escenario de máquinas virtuales con AWS o Maquinas Virtuales, trabajaremos con una infraestructura en tres niveles con:
