@@ -294,7 +294,7 @@ Una vez lo escribis, dejad espacio fuera y entrad de nuevo a localhost:8080, ya 
 Como pueden ver ahora... La conexión es segura, todo ello gracias al certificado de cerbot y letsencrypt
 
 ## Crear la lista de control de acceso:
-Estas se encargan de que la conexión pase unica y exclusivamente por los puertos y/o conexiones de cada maquina virtual
+Como ultima parte de esta infraestructura, crearemos listas de control de acceso, quienes se encargan de que la conexión pase unica y exclusivamente por los puertos y/o conexiones de cada maquina virtual
 
 Configuración para el balanceador de cargas: Es la única expuesta al exterior. Debe permitir tráfico público de Internet en los puertos web (80 para HTTP y 443 para HTTPS), además del puerto de administración (22 para SSH).
 ```
