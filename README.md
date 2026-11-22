@@ -109,7 +109,6 @@ apt update && apt install apache2 -y
 Habilitar modulos proxy
 ```
 sudo a2enmod proxy proxy_http proxy_balancer lbmethod_byrequests
-```
 nano ~/.bashrc
 ```
 agregar esta linea
@@ -136,7 +135,6 @@ Esta será la configuración que estaré usando dentro del archivo
     ProxyPreserveHost On
     ProxyPass / balancer://mycluster/
     ProxyPassReverse / balancer://mycluster/
-
     <Proxy balancer://mycluster>
 	#La IP de Web1
         BalancerMember http://192.168.56.21 route=web1
@@ -159,9 +157,9 @@ sudo systemctl restart apache2
 Probar el balanceador de carga, debo usar el navegador conectándome con localhost y usar el reenvio de puertos (8080), cuando entramos, intercambiara entre web 1 y web 2 para evitar que se sobrecarge la pagina, sin embargo, su conexión no es segura ya que se conecta mediante http://, por lo tanto necesitaremos obtener la certificación
 
 Instalar un certificado valido con certbot 
-
+```
 sudo apt install certbot python3-certbot-apache -y
-
+```
 Despues de instalar, volvemos a reiniciar apache
 
 El error de conexión segura (ERR_SSL_PROTOCOL_ERROR o similar) al intentar entrar por https://localhost:8080 se debe a dos motivos técnicos principales en mi entorno local con VirtualBox:
@@ -209,3 +207,7 @@ Capa 1 (Balanceador de Carga): Es la única expuesta al exterior. Debe permitir 
 Capa 2 (Servidores Web en Backend): Deben estar completamente protegidos del exterior. Su grupo de seguridad bloquea el tráfico de Internet y solo permite peticiones HTTP (80) procedentes exclusivamente de la IP del balanceador.
 
 Capa 3 (Base de Datos): Es el nivel más crítico y aislado. Bloquea cualquier conexión general y solo permite tráfico en su puerto específico (por ejemplo, el 3306 de MariaDB) procedente exclusivamente de los servidores web de la Capa 2.
+
+Le añadiremos un certificado DNS mediante DuckDNS, como podran ver en la siguiente imagenes:
+
+
