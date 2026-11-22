@@ -6,8 +6,18 @@
 ### Configurar Servidores de Backend
 ### Configurar Servidores de Base de Datos
 ### Configurar Balanceador
-### 
+### Instalar un certificado valido con certbot (Y probar que funciona mediante duckdns.org)
+### Crear la lista de control de acceso
 
+## Introducción
+Se desea montar un escenario de máquinas virtuales con AWS o Maquinas Virtuales, trabajaremos con una infraestructura en tres niveles con:
+   1. Un balanceador en capa 1 expuesta a red pública.
+   2. Dos servidores web en Backend, capa 2 (red privada).
+   3. Un servidor de BBDD en capa 3 (red privada).
+
+Nuestro principal objetivo será montar este escenario donde todas las maquinas estén interconectadas entre si, con una configuración en los servidores web en backend con una ip elástica que le permita poder ser vista por la mayoría de navegadores web, un balanceador que asegure la integridad del sistema ya sea como proxy inverso, certificados https o evitando que se sobrecargue la página y el acceso constante a una base de datos.
+
+## Creando las maquinas virtuales
 Cree las 4 maquinas usando Debian-12 Bookworm, 1 Balanceador de Carga llamado JoaquinAlonsoAdamsBalanceador, 2 servidores web en Backend (JoaquinAlonsoAdamsWeb1 y JoaquinAlonsoAdamsWeb2) y Un servidor de BBDD llamado JoaquinAlonsoAdamsBD.
 
 Nota 1: Para facilitarme los procesos de configuración correspondientes, opte por usar putty, asignándole un reenvio de puerto para ssh al adaptador NAT. Porque me permite copiar el código desde el documento, de modo que los puertos serian: 2222 para balanceador, 2223 para BD, 2224 para Web1 y 2225 para Web2
@@ -38,10 +48,9 @@ sudo systemctl restart networking
 ```
 
 ## Configurar Servidores de Backend
-Necesitamos crear
+El Backend es la "cara" de nuestro sistema balanceador, es lo que la gente vera o vería si la página web fuera pública, para ello, configuraremos los servidores Web1 y Web2
 
 ### Configurando a la maquina WEB1:
-
 Debo instalar el servidor Apache y el cliente de MariaDB para conectarme con la base de datos
 ```
 sudo apt update && sudo apt install apache2 mariadb-client -y
@@ -66,7 +75,6 @@ La pagina web en cuestion:
 ```
 
 ### Configurando a la maquina WEB2:
-
 Debo instalar el servidor Apache y el cliente de MariaDB para conectarme con la base de datos:
 ```
 apt update && apt install apache2 mariadb-client -y
@@ -150,18 +158,12 @@ systemctl restart apache2
 
 Para el usuario final, no sabe que detrás de la pagina web dado por el balanceador, hay varios servidores y la base de datos, siendo que el mismo balanceador actúa como proxy inverso, la primera linea de defensa para evitar ataques a los servidores web 1 y web 2, mucho menos que accedan a la base de datos.
 
-![Texto alternativo](ruta-o-url-de-la-imagen)
-
-![Texto alternativo](ruta-o-url-de-la-imagen)
-
-## Configuración de Apache
-
 Ahora toca lo más tedioso, configurar el archivo de configuración de apache (000-default.conf) dentro del balanceador, para que este funcione la pagina web, usaremos el siguiente comando:
 ```
 sudo nano /etc/apache2/sites-available/000-default.conf
 ```
 
-Esta será la configuración que estaré usando dentro del archivo
+Esta será la configuración que estaré usando dentro del archivo (OJO: Hay que validar que no haya errores en el archivo de configuración, la mas minima errata lo puede dañar):
 ```
 <VirtualHost *:80>
     ServerName localhost
@@ -178,8 +180,6 @@ Esta será la configuración que estaré usando dentro del archivo
 </VirtualHost>
 ```
 
-Hay que validar que no haya errores en el archivo de configuración, la mas minima errata lo puede dañar.
-
 El comando siguiente sirve para probar las capacidades del apache2:
 ```
 sudo apache2ctl configtest
@@ -190,7 +190,12 @@ Como se ha realizado una configuración a apache, siempre hay que reiniciar el a
 sudo systemctl restart apache2
 ```
 
-Si quieres el balanceador de carga, debo usar el navegador conectándome con localhost y usar el reenvio de puertos (8080), cuando entramos, intercambiara entre web 1 y web 2 para evitar que se sobrecargue la pagina, sin embargo, su conexión no es segura ya que se conecta mediante http://, por lo tanto necesitaremos obtener la certificación.
+Si quieres el balanceador de carga, debo usar el navegador conectándome con localhost y usar el reenvio de puertos (8080), cuando entramos, intercambiara entre web 1 y web 2 para evitar que se sobrecargue la pagina.
+
+![Texto alternativo](ruta-o-url-de-la-imagen)
+
+![Texto alternativo](ruta-o-url-de-la-imagen)
+
 
 ## Instalar un certificado valido con certbot 
 Aunque nos podamos conectarnos a la web, no es una conexión segura, pero para eso esta certificado de Cerbot, que se usa para que la conexión al servidor sea por https (conexión segura), se hace por el puerto 4443 y se usa mediante el protocolo SSL para encriptar el canal de comunicaciones.
@@ -199,7 +204,6 @@ sudo apt install certbot python3-certbot-apache -y
 ```
 
 Después de instalar, volvemos a reiniciar apache, sin embargo nos saldrá error de conexión segura (ERR_SSL_PROTOCOL_ERROR o similar) al intentar entrar por https://localhost:8080, y esto se debe a dos motivos técnicos principales en el entorno local con VirtualBox:
-
 - El puerto de red no coincide ya que mapea el puerto anfitrión 8080 hacia el puerto 80 (HTTP) de la máquina virtual, no al puerto 443 (HTTPS). Por lo tanto, solo intentando hablar por HTTPS en un puerto configurado para tráfico plano HTTP.
 - Certbot y Let's Encrypt no pueden emitir certificados SSL válidos para localhost ni para IPs privadas, ya que requieren un domínio público accesible desde Internet para validar la seguridad; cosa que no tenemos, ya que lo realizamos via maquinas virtuales.
 
@@ -285,7 +289,6 @@ Una vez lo escribis, dejad espacio fuera y entrad de nuevo a localhost:8080, ya 
 Como pueden ver ahora... La conexión es segura, todo ello gracias al certificado de cerbot y letsencrypt
 
 ## Crear la lista de control de acceso:
-
 Estas se encargan de que la conexión pase unica y exclusivamente por los puertos y/o conexiones de cada maquina virtual
 
 Configuración para el balanceador de cargas: Es la única expuesta al exterior. Debe permitir tráfico público de Internet en los puertos web (80 para HTTP y 443 para HTTPS), además del puerto de administración (22 para SSH).
