@@ -20,6 +20,8 @@ Nuestro principal objetivo será montar este escenario donde todas las maquinas 
 ## Creando las maquinas virtuales
 Cree las 4 maquinas usando Debian-12 Bookworm, 1 Balanceador de Carga llamado JoaquinAlonsoAdamsBalanceador, 2 servidores web en Backend (JoaquinAlonsoAdamsWeb1 y JoaquinAlonsoAdamsWeb2) y Un servidor de BBDD llamado JoaquinAlonsoAdamsBD.
 
+![Aquí están las 4 maquinas](img/Maquinas4.png) 
+
 Nota 1: Para facilitarme los procesos de configuración correspondientes, opte por usar putty, asignándole un reenvio de puerto para ssh al adaptador NAT. Porque me permite copiar el código desde el documento, de modo que los puertos serian: 2222 para balanceador, 2223 para BD, 2224 para Web1 y 2225 para Web2
 
 Nota 2: Relacionado a lo anterior, hay que tener en cuenta que todos los comandos puestos con sudo, siempre se tienen que usar si configuramos desde la maquina virtual de forma directa, pero como el usuario original (joaquinub) no es parte de los sudoers, me veo en la obligación de entrar como root, con el fin de poder realizar la actividad.
@@ -192,10 +194,11 @@ sudo systemctl restart apache2
 
 Si quieres el balanceador de carga, debo usar el navegador conectándome con localhost y usar el reenvio de puertos (8080), cuando entramos, intercambiara entre web 1 y web 2 para evitar que se sobrecargue la pagina.
 
-![Texto alternativo](ruta-o-url-de-la-imagen)
+![Es la pagina de antes](img/Web1Pagina.png)
 
-![Texto alternativo](ruta-o-url-de-la-imagen)
+![Y su variante de la Web2](img/Web2Pagina.png)
 
+![Esto no es bueno](img/problemo.png)
 
 ## Instalar un certificado valido con certbot 
 Aunque nos podamos conectarnos a la web, no es una conexión segura, pero para eso esta certificado de Cerbot, que se usa para que la conexión al servidor sea por https (conexión segura), se hace por el puerto 4443 y se usa mediante el protocolo SSL para encriptar el canal de comunicaciones.
@@ -282,9 +285,11 @@ Dentro del CMD, como administrador accederemos con cd C:\Windows\System32\driver
 
 Una vez lo escribis, dejad espacio fuera y entrad de nuevo a localhost:8080, ya debería conectarse:
 
-![Texto alternativo](ruta-o-url-de-la-imagen)
+![Parece no haber cambios](img/httpsweb1.png)
 
-![Texto alternativo](ruta-o-url-de-la-imagen)
+![Hasta que miras el certificado](img/httpsweb2.png)
+
+![TACHAN FUNCIONA](img/safestuff.png)
 
 Como pueden ver ahora... La conexión es segura, todo ello gracias al certificado de cerbot y letsencrypt
 
